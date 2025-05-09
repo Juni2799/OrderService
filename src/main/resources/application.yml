@@ -1,15 +1,14 @@
 spring:
   application:
     name: order-service
-  h2:
-    console:
-      enabled: true
   datasource:
-    url: jdbc:h2:mem:testdb
-    username: sa
-    password:
+    url: jdbc:postgresql://localhost:5432/orderdb
+    username: embarkx
+    password: embarkx
   jpa:
+    database: POSTGRESQL
     show-sql: true
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: create
 

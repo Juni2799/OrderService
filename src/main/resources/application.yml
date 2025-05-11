@@ -2,13 +2,15 @@ spring:
   application:
     name: order-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/orderdb
-    username: embarkx
-    password: embarkx
+    url: jdbc:mysql://127.0.0.1:3306/Ecom_OrderService
+    username: root
+    password: root
   jpa:
-    database: POSTGRESQL
     show-sql: true
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    database-platform: org.hibernate.dialect.MySQLDialect
+    properties:
+      hibernate:
+        format_sql: true
     hibernate:
       ddl-auto: create
 

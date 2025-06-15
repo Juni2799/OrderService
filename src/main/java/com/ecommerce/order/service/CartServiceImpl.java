@@ -8,6 +8,7 @@ import com.ecommerce.order.dtos.client.UserResponse;
 import com.ecommerce.order.models.Cart;
 import com.ecommerce.order.repository.CartRepository;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.github.resilience4j.retry.annotation.Retry;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class CartServiceImpl implements CartService{
     @Override
     @Retry(name = "retryService", fallbackMethod = "unableToRetry")
     @CircuitBreaker(name = "productService", fallbackMethod = "addToCartFallBack")
+    @RateLimiter(name = "limitBreaker", fallbackMethod = "requestLimitBreached")
     public boolean addToCart(Long userId, CartItemRequest request) {
         // look for product
         ProductResponse productResponse = productHttpInterface.getProductById(request.getProductId());
@@ -65,6 +67,8 @@ public class CartServiceImpl implements CartService{
     }
 
     public boolean unableToRetry(Long userId, CartItemRequest request, Exception e){ return false; }
+
+    public boolean requestLimitBreached(Long userId, CartItemRequest request, Exception e){ return false; }
 
     @Transactional
     @Override

@@ -8,10 +8,12 @@ import com.ecommerce.order.models.OrderItem;
 import com.ecommerce.order.models.constants.OrderStatus;
 import com.ecommerce.order.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -21,6 +23,8 @@ public class OrderServiceImpl implements OrderService{
     private final OrderRepository orderRepository;
     //private final UserRepository userRepository;
     private final CartService cartService;
+    private final RabbitTemplate rabbitTemplate; //for publishing messages to RabbitMQ
+
     @Override
     public Optional<OrderResponse> createOrder(Long userId) {
         //Validate cart items
@@ -60,6 +64,10 @@ public class OrderServiceImpl implements OrderService{
 
         //Clear the cart as well
         cartService.clearCart(userId);
+
+        //Message to be published after clearing cart
+        rabbitTemplate.convertAndSend("order.exchange", "order.tracking",
+                Map.of("orderId", savedOrder.getId(), "status", "CREATED"));
 
         return Optional.of(orderToOrderResponseMapper(savedOrder));
     }

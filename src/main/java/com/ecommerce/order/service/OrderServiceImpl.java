@@ -2,6 +2,7 @@ package com.ecommerce.order.service;
 
 import com.ecommerce.order.dtos.OrderItemDTO;
 import com.ecommerce.order.dtos.OrderResponse;
+import com.ecommerce.order.dtos.events.OrderCreatedEvent;
 import com.ecommerce.order.models.Cart;
 import com.ecommerce.order.models.Order;
 import com.ecommerce.order.models.OrderItem;
@@ -66,10 +67,30 @@ public class OrderServiceImpl implements OrderService{
         cartService.clearCart(userId);
 
         //Message to be published after clearing cart
+        OrderCreatedEvent orderCreatedEvent = OrderCreatedEvent.builder()
+                .orderId(savedOrder.getId())
+                .userId(savedOrder.getUserId())
+                .orderStatus(savedOrder.getStatus())
+                .items(orderItemToOrderItemDTOList(savedOrder.getItems()))
+                .totalAmount(savedOrder.getTotalAmount())
+                .createdAt(savedOrder.getCreatedAt())
+                .build();
         rabbitTemplate.convertAndSend("order.exchange", "order.tracking",
-                Map.of("orderId", savedOrder.getId(), "status", "CREATED"));
+                orderCreatedEvent);
 
         return Optional.of(orderToOrderResponseMapper(savedOrder));
+    }
+
+    private List<OrderItemDTO> orderItemToOrderItemDTOList(List<OrderItem> items){
+        return items.stream()
+                .map(item -> new OrderItemDTO(
+                        item.getId(),
+                        item.getProductId(),
+                        item.getQuantity(),
+                        item.getPrice(),
+                        item.getPrice().multiply(new BigDecimal(item.getQuantity()))
+                ))
+                .collect(Collectors.toList());
     }
 
     private OrderResponse orderToOrderResponseMapper(Order order){
